@@ -5,7 +5,7 @@ package tokenmgmt;
 
 option go_package = "karthik.com/go-tokenmgmt-grpc;go_tokenmgmt_grpc";
 
-service TokenManagement {
+service Tkn {
   rpc CreateNewToken (NewToken) returns (Token) {}
   rpc GetToekns (Token) returns (Token) {}
   rpc DropToken (TokenInfo) returns (EmptyToken) {}
@@ -27,7 +27,7 @@ message Token {
 }
 
 message EmptyToken {
-
+  string message=1;
 }
 
 message TokenList {
