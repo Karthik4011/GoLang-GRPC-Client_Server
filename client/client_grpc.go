@@ -9,7 +9,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"google.golang.org/grpc"
@@ -28,11 +27,11 @@ func main() {
 			log.Fatalf("did not connect: %v", err)
 		}
 		defer conn.Close()
-		c := pb.NewTknClient(conn)
+		clientConn := pb.NewTknClient(conn)
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		clientCntx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
-		r, err := c.CreateNewToken(ctx, &pb.NewToken{Name: "undefined", Domain: "undefined", State: "undefined", Id: args[2]})
+		r, err := clientConn.CreateNewToken(clientCntx, &pb.NewToken{Name: "undefined", Domain: "undefined", State: "undefined", Id: args[2]})
 		if err != nil {
 			log.Fatalf("could not create token: %v", err)
 		}
@@ -45,13 +44,11 @@ func main() {
 			log.Fatalf("did not connect: %v", err)
 		}
 		defer conn.Close()
-		c := pb.NewTknClient(conn)
+		clientConn := pb.NewTknClient(conn)
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		clientCntx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
-		var wg sync.WaitGroup
-		wg.Add(1)
-		r, err := c.GetToekns(ctx, &pb.Token{Id: args[2]})
+		r, err := clientConn.GetToekns(clientCntx, &pb.Token{Id: args[2]})
 		finVal := strings.Split(strings.Split(r.GetState(), ";")[1], ":")[1]
 		fmt.Println("Final Value: ", finVal)
 		if err != nil {
@@ -65,9 +62,9 @@ func main() {
 			log.Fatalf("did not connect: %v", err)
 		}
 		defer conn.Close()
-		c := pb.NewTknClient(conn)
+		clientConn := pb.NewTknClient(conn)
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		clientCntx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
 		low := args[6]
 		mid := args[8]
@@ -77,7 +74,7 @@ func main() {
 		midInt, _ := strconv.Atoi(args[8])
 		_, partVal := hasher(lowInt, midInt, args[4])
 		state := "partialValue:" + partVal + ";finalValue:undefined"
-		r, err := c.WriteToken(ctx, &pb.NewToken{Name: args[4], Domain: dom, State: state, Id: args[2]})
+		r, err := clientConn.WriteToken(clientCntx, &pb.NewToken{Name: args[4], Domain: dom, State: state, Id: args[2]})
 		if err != nil {
 			log.Fatalf("could not create token: %v", err)
 		}
@@ -91,11 +88,11 @@ func main() {
 			log.Fatalf("did not connect: %v", err)
 		}
 		defer conn.Close()
-		c := pb.NewTknClient(conn)
+		clientConn := pb.NewTknClient(conn)
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		clientCntx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
-		r, err := c.DropToken(ctx, &pb.TokenInfo{Id: args[1]})
+		r, err := clientConn.DropToken(clientCntx, &pb.TokenInfo{Id: args[1]})
 		if err != nil {
 			log.Fatalf("Unable to drop the token %v", err)
 		}

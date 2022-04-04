@@ -25,16 +25,16 @@ type TknServer struct {
 	mutex      sync.RWMutex
 }
 
-func (tkn_server *TknServer) CreateNewToken(ctx context.Context, in *pb.NewToken) (*pb.Token, error) {
-	log.Printf("Received: %v", in.GetId())
+func (tkn_server *TknServer) CreateNewToken(serverCntx context.Context, in *pb.NewToken) (*pb.Token, error) {
 	tkn_server.mutex.Lock()
 	created_token := &pb.Token{Name: in.GetName(), Domain: in.GetDomain(), Id: in.GetId(), State: in.GetState()}
 	tkn_server.token_list.Tokens = append(tkn_server.token_list.Tokens, created_token)
 	tkn_server.mutex.Unlock()
+	log.Printf("Created Token: %v", in.GetId())
 	return created_token, nil
 }
 
-func (tkn_server *TknServer) GetToekns(ctx context.Context, in *pb.Token) (*pb.Token, error) {
+func (tkn_server *TknServer) GetToekns(serverCntx context.Context, in *pb.Token) (*pb.Token, error) {
 	for i := 0; i < len(tkn_server.token_list.Tokens); i++ {
 		if tkn_server.token_list.Tokens[i].Id == in.GetId() {
 			if tkn_server.token_list.Tokens[i].Domain != "undefined" {
@@ -58,25 +58,25 @@ func (tkn_server *TknServer) GetToekns(ctx context.Context, in *pb.Token) (*pb.T
 					finalSta = "PartialValue:" + strconv.Itoa(parInt) + ";FinalValue:" + strconv.Itoa(hashInt)
 				}
 				tkn_server.token_list.Tokens[i].State = finalSta
-				idList := make([]string, len(tkn_server.token_list.Tokens))
+				idList := ""
 				for i := 0; i < len(tkn_server.token_list.Tokens); i++ {
-					idList = append(idList, tkn_server.token_list.Tokens[i].Id)
+					idList = idList + " " + tkn_server.token_list.Tokens[i].Id
 				}
-				fmt.Println("Current Token Id's list read: ", idList)
+				fmt.Println("Current Token Id's after reading ", in.GetId()+" :", idList)
 				return tkn_server.token_list.Tokens[i], nil
 			}
 			idList := ""
 			for i := 0; i < len(tkn_server.token_list.Tokens); i++ {
 				idList = idList + " " + tkn_server.token_list.Tokens[i].Id
 			}
-			fmt.Println("Current Token Id's list: ", idList)
+			fmt.Println("Current Token Id's after reading ", in.GetId()+" :", idList)
 			return tkn_server.token_list.Tokens[i], nil
 		}
 	}
 	return nil, fmt.Errorf("Token doesn't exit. Enter valid Token Id")
 }
 
-func (tkn_server *TknServer) DropToken(ctx context.Context, in *pb.TokenInfo) (*pb.EmptyToken, error) {
+func (tkn_server *TknServer) DropToken(serverCntx context.Context, in *pb.TokenInfo) (*pb.EmptyToken, error) {
 	tkn_server.mutex.Lock()
 	for i := 0; i < len(tkn_server.token_list.Tokens); i++ {
 		if tkn_server.token_list.Tokens[i].Id == in.GetId() {
@@ -86,10 +86,19 @@ func (tkn_server *TknServer) DropToken(ctx context.Context, in *pb.TokenInfo) (*
 	}
 	tkn_server.mutex.Unlock()
 	mess := "Token " + in.GetId() + " has been dropped successfully...!!!!"
+	fmt.Println(mess)
+	idList := ""
+	for i := 0; i < len(tkn_server.token_list.Tokens); i++ {
+		idList = idList + " " + tkn_server.token_list.Tokens[i].Id
+	}
+	if idList == "" {
+		idList = "Empty"
+	}
+	fmt.Println("Current Token Id's after dropping ", in.GetId()+" :", idList)
 	return &pb.EmptyToken{Message: mess}, nil
 }
 
-func (tkn_server *TknServer) WriteToken(ctx context.Context, in *pb.NewToken) (*pb.Token, error) {
+func (tkn_server *TknServer) WriteToken(serverCntx context.Context, in *pb.NewToken) (*pb.Token, error) {
 	tkn_server.mutex.Lock()
 	var index int
 	var flag bool
@@ -112,7 +121,7 @@ func (tkn_server *TknServer) WriteToken(ctx context.Context, in *pb.NewToken) (*
 	for i := 0; i < len(tkn_server.token_list.Tokens); i++ {
 		idList = idList + " " + tkn_server.token_list.Tokens[i].Id
 	}
-	fmt.Println("Current Token Id's list : ", idList)
+	fmt.Println("Current Token Id's after writing", in.GetId()+" :", idList)
 	return tkn_server.token_list.Tokens[index], nil
 }
 
@@ -125,7 +134,7 @@ func main() {
 	pb.RegisterTknServer(s, &TknServer{token_list: &pb.TokenList{}})
 	log.Printf("server listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
+		log.Fatalf("failed to start server at: %v", err)
 	}
 }
 
