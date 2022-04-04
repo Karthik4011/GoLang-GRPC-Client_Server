@@ -119,5 +119,5 @@ func hasher(start int, end int, name string) (int, string) {
 		}
 	}
 
-	return index, strconv.Itoa(index)
+	return index, strconv.Itoa(int(min))
 }
